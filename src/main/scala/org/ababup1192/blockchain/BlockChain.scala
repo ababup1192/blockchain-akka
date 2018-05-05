@@ -4,6 +4,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Inbox, Props}
 import akka.pattern.ask
+import akka.pattern.pipe
 import akka.util.Timeout
 
 import scala.annotation.tailrec
@@ -82,17 +83,16 @@ class BlockChain extends Actor with ActorLogging {
         } yield ch
       }
 
-      val newChain = Await.result(Future.foldLeft(chains)(chain) { (newChain, ch) =>
+     Future.foldLeft(chains)(chain) { (newChain, ch) =>
         if (newChain.length < ch.length) ch
         else newChain
-      }, timeout.duration)
-
-      sender ! (if (chain != newChain) {
-        chain = newChain
-        true
-      } else false)
-
-
+      } map { newChain =>
+       if (chain != newChain) {
+         chain = newChain
+         true
+       } else false
+     } pipeTo sender
+      
     case Chain =>
       sender ! chain
 
