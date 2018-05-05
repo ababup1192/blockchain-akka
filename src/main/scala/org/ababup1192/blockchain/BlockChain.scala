@@ -5,12 +5,10 @@ import scala.concurrent.duration._
 import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Inbox, Props}
 import akka.pattern.ask
 import akka.util.Timeout
-import org.ababup1192.blockchain.BlockChain.Chain
 
 import scala.annotation.tailrec
 import scala.concurrent.{Await, Future}
 import scala.language.postfixOps
-import scala.util.{Failure, Success}
 
 case class Transaction(sender: String, recipient: String, amount: Int)
 
@@ -166,7 +164,7 @@ class BlockChainClient extends Actor with ActorLogging {
         block <- (blockChain ? BlockChain.NewBlock(proof, None)).mapTo[Block]
       } yield MineView("新しいブロックを採掘しました", block.index, block.transactions, proof, block.previousHash))
 
-    case BlockChainClient.Chain(blockChain) =>
+    case Chain(blockChain) =>
       sender ! (blockChain ? BlockChain.Chain).mapTo[Seq[Block]]
         .map(chain => ChainView(chain, chain.length))
 
